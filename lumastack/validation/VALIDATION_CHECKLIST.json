@@ -1,0 +1,145 @@
+{
+  "checklistName": "LumaStack v3 validation checklist",
+  "version": "0.1.0-scaffold",
+  "mode": "safeInterpretiveController",
+  "verifiedFromZip": false,
+  "source": "generatedScaffold",
+  "createdDate": "2026-06-19",
+  "validationPolicy": {
+    "mustNotClaimZipVerification": true,
+    "mustNotClaimExternalAutonomy": true,
+    "mustUseCamelCase": true,
+    "mustDeclareSideEffects": true,
+    "writesRequireRollbackNotes": true,
+    "externalWritesRequireApproval": true,
+    "deleteDisallowedByDefault": true,
+    "forcePushDisallowedByDefault": true,
+    "publicSharingDisallowedByDefault": true
+  },
+  "checks": [
+    {
+      "checkId": "chk-001-root-manifest",
+      "category": "repository",
+      "target": "lumastack/ARTIFACT_MANIFEST.json",
+      "assertions": [
+        "file exists",
+        "artifactName is present",
+        "driveFileId is present",
+        "verifiedFromZip is false",
+        "externalAutonomy is false"
+      ],
+      "required": true,
+      "status": "defined"
+    },
+    {
+      "checkId": "chk-002-system-state",
+      "category": "state",
+      "target": "lumastack/SYSTEM_STATE.json",
+      "assertions": [
+        "file exists",
+        "state is present",
+        "zipPolicy is present",
+        "verifiedFromZip is false",
+        "guardrails are present"
+      ],
+      "required": true,
+      "status": "defined"
+    },
+    {
+      "checkId": "chk-003-module-contracts",
+      "category": "contracts",
+      "target": "lumastack/contracts/MODULE_CONTRACTS.json",
+      "assertions": [
+        "file exists",
+        "contractPack is present",
+        "modules array is non-empty",
+        "each module declares moduleId",
+        "each module declares inputs and outputs",
+        "each module declares guards"
+      ],
+      "required": true,
+      "status": "defined"
+    },
+    {
+      "checkId": "chk-004-agent-contracts",
+      "category": "contracts",
+      "target": "lumastack/contracts/AGENT_CONTRACTS.json",
+      "assertions": [
+        "file exists",
+        "agents array is non-empty",
+        "each agent declares agentId",
+        "each agent declares boundModule",
+        "each agent declares receives and returns",
+        "each agent denies unsafe actions"
+      ],
+      "required": true,
+      "status": "defined"
+    },
+    {
+      "checkId": "chk-005-pipeline-contracts",
+      "category": "contracts",
+      "target": "lumastack/contracts/PIPELINE_CONTRACTS.json",
+      "assertions": [
+        "file exists",
+        "pipelines array is non-empty",
+        "each pipeline declares steps",
+        "each step declares sideEffects",
+        "write steps include rollback notes",
+        "external writes require approval"
+      ],
+      "required": true,
+      "status": "defined"
+    },
+    {
+      "checkId": "chk-006-readmes",
+      "category": "documentation",
+      "target": "lumastack/**/*.md",
+      "assertions": [
+        "README files exist for major layers",
+        "scaffold status is documented",
+        "guardrails are documented",
+        "next actions are documented"
+      ],
+      "required": true,
+      "status": "defined"
+    },
+    {
+      "checkId": "chk-007-drive-artifact",
+      "category": "artifact",
+      "target": "Google Drive artifact metadata",
+      "assertions": [
+        "driveFileId is stable",
+        "driveShared is false unless explicitly changed",
+        "artifact type is application/zip",
+        "artifact name matches manifest"
+      ],
+      "required": true,
+      "status": "defined"
+    },
+    {
+      "checkId": "chk-008-release-snapshot",
+      "category": "release",
+      "target": "release snapshot",
+      "assertions": [
+        "release snapshot exists before final handoff",
+        "known limits are present",
+        "rollback notes are present",
+        "commit references are present"
+      ],
+      "required": false,
+      "status": "defined"
+    }
+  ],
+  "passCriteria": {
+    "requiredChecksMustPass": true,
+    "optionalChecksMayRemainDefined": true,
+    "noUnsafeClaims": true,
+    "noUnapprovedDestructiveActions": true
+  },
+  "nextActions": [
+    "RUN validation checklist",
+    "CREATE release snapshot",
+    "TRACE releaseSnapshotPipeline"
+  ],
+  "omegaSignal": "AUUU"
+}
