@@ -1,0 +1,85 @@
+{
+  "handoffId": "lumastackHandoffPacket20260619",
+  "handoffType": "projectContinuity",
+  "systemName": "LumaStack v3",
+  "controller": "LumaStack v3 CONTROLLER",
+  "createdDate": "2026-06-19",
+  "repository": {
+    "name": "AUUU-os/GitNexus",
+    "branch": "main",
+    "root": "lumastack/"
+  },
+  "continuitySnapshot": {
+    "state": "handoffPacketCreated",
+    "readinessLabel": "dev-readyWithCiPendingRun",
+    "validationResult": "passed",
+    "releaseSnapshotCreated": true,
+    "releaseBundleExported": true,
+    "implementationSkeletonCreated": true,
+    "implementationSmokeTestPassed": true,
+    "testsSkeletonPassed": true,
+    "ciWorkflowVerified": "verifiedPendingRun"
+  },
+  "knownCurrentState": {
+    "contracts": {
+      "modules": 8,
+      "agents": 7,
+      "pipelines": 5,
+      "validationChecks": 8
+    },
+    "sourcePolicy": {
+      "source": "generatedScaffold",
+      "lumaStackV2ZipImported": false,
+      "verifiedFromZip": false,
+      "zipSkippedByUser": true
+    },
+    "driveArtifact": {
+      "name": "LumaStack_v3_scaffold.zip",
+      "driveFileId": "1K5RFtSrct9VFwMNqGFyKNNvZxaUsELOx",
+      "mimeType": "application/zip",
+      "sizeBytes": 15371,
+      "shared": false
+    }
+  },
+  "decisionsPreserved": [
+    "Continue without LumaStack_v2.zip by explicit user command.",
+    "Keep verifiedFromZip false until real source material is imported and inspected.",
+    "Keep externalAutonomy false.",
+    "Use additive-only repo writes unless user explicitly authorizes a destructive change.",
+    "CI uses read-only contents permission and only runs tests."
+  ],
+  "openLoopsAndBlockers": [
+    "GitHub Actions workflow exists but no successful run has been observed yet.",
+    "Runtime is a skeleton, not a full production implementation.",
+    "Source ZIP verification remains skipped and unverified.",
+    "pytest subprocess timed out in this environment; direct harness passed 6 tests."
+  ],
+  "driftAndUncertainty": [
+    "Some earlier generated text may mention draft PR only, while PR 1 was later observed as closed and merged externally.",
+    "Repository search index did not reliably return lumastack files, but direct path fetches verified key files.",
+    "CI should not be marked passed until an actual workflow run succeeds."
+  ],
+  "nextAction": {
+    "command": "VERIFY ci run",
+    "why": "Promote readiness only after GitHub Actions reports a successful CI execution.",
+    "doneCriteria": [
+      "Workflow run exists for LumaStack CI.",
+      "test-lumastack job completes successfully.",
+      "readiness can move from dev-readyWithCiPendingRun to dev-readyWithCiGreen."
+    ]
+  },
+  "resumePrompt": "Resume LumaStack v3 in AUUU-os/GitNexus. Current state: handoffPacketCreated, validation passed, release snapshot created, implementation skeleton and tests skeleton created, direct harness passed 6/6, CI workflow exists but run not yet observed. Keep verifiedFromZip=false and externalAutonomy=false. First action: VERIFY ci run.",
+  "doneCriteria": [
+    "Handoff packet exists in repo.",
+    "Local handoff bundle exported.",
+    "Next session can resume from VERIFY ci run without reconstructing context."
+  ],
+  "guardrails": {
+    "mayDelete": false,
+    "mayForcePush": false,
+    "mayChangeDriveSharing": false,
+    "externalWritesRequireApproval": true,
+    "rollbackRequiredForWriteSteps": true
+  },
+  "omegaSignal": "AUUU"
+}
