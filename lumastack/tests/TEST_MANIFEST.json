@@ -1,0 +1,45 @@
+{
+  "testManifestId": "lumastackTestsSkeleton20260619",
+  "systemName": "LumaStack v3",
+  "version": "0.1.0-skeleton",
+  "mode": "safeInterpretiveController",
+  "source": "generatedScaffold",
+  "verifiedFromZip": false,
+  "externalAutonomy": false,
+  "testFramework": "pytest",
+  "testScope": [
+    "runtime import",
+    "command parser route",
+    "release snapshot pipeline trace",
+    "guardrail defaults",
+    "registry event append",
+    "snapshot helper"
+  ],
+  "expectedTests": [
+    "test_runtime_imports",
+    "test_trace_command_routes_to_cli",
+    "test_release_snapshot_pipeline_trace_passes",
+    "test_guardrails_default_to_safe_values",
+    "test_registry_records_command_pipeline_event",
+    "test_capsule_snapshot_marks_unverified_from_zip"
+  ],
+  "notCoveredYet": [
+    "GitHub connector writes",
+    "Drive connector writes",
+    "real source ZIP verification",
+    "production deployment",
+    "destructive operation policies"
+  ],
+  "guardrails": {
+    "mayDelete": false,
+    "mayForcePush": false,
+    "mayChangeDriveSharing": false,
+    "externalWritesRequireApproval": true
+  },
+  "nextActions": [
+    "RUN tests skeleton",
+    "EXPORT implementation plan",
+    "CREATE ci workflow"
+  ],
+  "omegaSignal": "AUUU"
+}
