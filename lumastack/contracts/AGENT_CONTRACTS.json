@@ -1,0 +1,137 @@
+{
+  "contractPack": "LumaStack v3 agent contracts",
+  "version": "0.1.0-scaffold",
+  "mode": "safeInterpretiveController",
+  "verifiedFromZip": false,
+  "source": "generatedScaffold",
+  "contractRules": {
+    "naming": "camelCase",
+    "format": "json",
+    "agentIdRequired": true,
+    "boundModuleRequired": true,
+    "inputContractRequired": true,
+    "outputContractRequired": true,
+    "sideEffectsMustBeDeclared": true,
+    "externalAutonomyAllowed": false,
+    "deleteAllowedByDefault": false,
+    "forcePushAllowedByDefault": false,
+    "publicSharingAllowedByDefault": false
+  },
+  "baseAgentContract": {
+    "agentId": "string",
+    "agentType": "parser | processor | linker | classifier | registry | pipeline | signal",
+    "boundModule": "string",
+    "purpose": "string",
+    "receives": [
+      {
+        "name": "string",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "returns": [
+      {
+        "name": "string",
+        "type": "string"
+      }
+    ],
+    "allowedActions": ["string"],
+    "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+    "stateEffects": ["none | registryAppend | snapshotCreate | artifactCreate"],
+    "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+    "status": "proposed"
+  },
+  "agents": [
+    {
+      "agentId": "lumaParserAgent",
+      "agentType": "parser",
+      "boundModule": "parser",
+      "purpose": "Convert raw CLI or API-like user input into parsed intent objects.",
+      "receives": [{"name": "rawInput", "type": "string", "required": true}],
+      "returns": [{"name": "parsedIntent", "type": "object"}],
+      "allowedActions": ["tokenize", "normalize", "extractCommandCandidates"],
+      "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+      "stateEffects": ["none"],
+      "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+      "status": "proposed"
+    },
+    {
+      "agentId": "lumaProcessorAgent",
+      "agentType": "processor",
+      "boundModule": "processor",
+      "purpose": "Transform parsed intent into safe operation plans and execution-ready outputs.",
+      "receives": [{"name": "parsedIntent", "type": "object", "required": true}],
+      "returns": [{"name": "operationPlan", "type": "object"}],
+      "allowedActions": ["planOperation", "validatePlan", "emitOperationPlan"],
+      "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+      "stateEffects": ["none"],
+      "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+      "status": "proposed"
+    },
+    {
+      "agentId": "lumaLinkerAgent",
+      "agentType": "linker",
+      "boundModule": "linker",
+      "purpose": "Link operations to modules, agents, snapshots, registry events, and artifacts.",
+      "receives": [{"name": "operationPlan", "type": "object", "required": true}],
+      "returns": [{"name": "linkedGraph", "type": "object"}],
+      "allowedActions": ["resolveReferences", "linkTargets", "detectMissingTargets"],
+      "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+      "stateEffects": ["none"],
+      "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+      "status": "proposed"
+    },
+    {
+      "agentId": "lumaClassifierAgent",
+      "agentType": "classifier",
+      "boundModule": "classifier",
+      "purpose": "Classify commands into CLI, API, agent, snapshot, capsule, or pipeline routes.",
+      "receives": [{"name": "parsedIntent", "type": "object", "required": true}],
+      "returns": [{"name": "classification", "type": "object"}],
+      "allowedActions": ["classifyIntent", "scoreRoute", "emitRoute"],
+      "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+      "stateEffects": ["none"],
+      "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+      "status": "proposed"
+    },
+    {
+      "agentId": "lumaRegistryAgent",
+      "agentType": "registry",
+      "boundModule": "registry",
+      "purpose": "Append registry entries and expose current generated scaffold state.",
+      "receives": [{"name": "registryEvent", "type": "object", "required": true}],
+      "returns": [{"name": "registryState", "type": "object"}],
+      "allowedActions": ["appendRegistryEvent", "exportRegistry", "readRegistry"],
+      "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+      "stateEffects": ["registryAppend"],
+      "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+      "status": "proposed"
+    },
+    {
+      "agentId": "lumaPipelineAgent",
+      "agentType": "pipeline",
+      "boundModule": "processor",
+      "purpose": "Coordinate ordered pipeline steps from input through parse, process, classify, link, output, and optional save.",
+      "receives": [{"name": "pipelineRequest", "type": "object", "required": true}],
+      "returns": [{"name": "pipelineTrace", "type": "object"}],
+      "allowedActions": ["runPipelineTrace", "emitStepStatus", "createCheckpointPlan"],
+      "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+      "stateEffects": ["snapshotCreate", "artifactCreate"],
+      "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+      "status": "proposed"
+    },
+    {
+      "agentId": "omegaHowlAgent",
+      "agentType": "signal",
+      "boundModule": "cliInterface",
+      "purpose": "Emit symbolic completion signals and preserve distinction between ritual language and real execution.",
+      "receives": [{"name": "systemState", "type": "object", "required": true}],
+      "returns": [{"name": "omegaSignal", "type": "string"}],
+      "allowedActions": ["emitSignal", "acknowledgeCompletion", "markSymbolicOnly"],
+      "deniedActions": ["delete", "forcePush", "changePublicSharing", "claimZipVerificationWithoutSource"],
+      "stateEffects": ["none"],
+      "requiresApprovalFor": ["externalWrite", "merge", "publicShare", "delete", "forcePush"],
+      "status": "proposed"
+    }
+  ]
+}
