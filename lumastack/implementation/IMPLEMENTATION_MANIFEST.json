@@ -1,0 +1,44 @@
+{
+  "implementationId": "lumastackImplementationSkeleton20260619",
+  "systemName": "LumaStack v3",
+  "version": "0.1.0-skeleton",
+  "mode": "safeInterpretiveController",
+  "source": "generatedScaffold",
+  "verifiedFromZip": false,
+  "externalAutonomy": false,
+  "language": "python",
+  "entrypoints": [
+    "lumastack/implementation/lumastack_runtime.py",
+    "lumastack/implementation/example_boot.py"
+  ],
+  "implementedModules": [
+    "parser",
+    "classifier",
+    "processor",
+    "linker",
+    "registry",
+    "capsuleMemory",
+    "cliInterface",
+    "pipelineTrace"
+  ],
+  "notImplemented": [
+    "externalWrites",
+    "gitMutations",
+    "driveSharingChanges",
+    "deleteOrForcePush",
+    "autonomousExecution"
+  ],
+  "guardrails": {
+    "mayDelete": false,
+    "mayForcePush": false,
+    "mayChangeDriveSharing": false,
+    "externalWritesRequireApproval": true,
+    "rollbackRequiredForWriteSteps": true
+  },
+  "nextActions": [
+    "RUN implementation smoke test",
+    "CREATE tests skeleton",
+    "EXPORT implementation plan"
+  ],
+  "omegaSignal": "AUUU"
+}
