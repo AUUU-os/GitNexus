@@ -1,0 +1,133 @@
+{
+  "contractPack": "LumaStack v3 module contracts",
+  "version": "0.1.0-scaffold",
+  "mode": "safeInterpretiveController",
+  "verifiedFromZip": false,
+  "source": "generatedScaffold",
+  "contractRules": {
+    "naming": "camelCase",
+    "format": "json",
+    "moduleIdRequired": true,
+    "inputSchemaRequired": true,
+    "outputSchemaRequired": true,
+    "sideEffectsMustBeDeclared": true,
+    "externalAutonomyAllowed": false
+  },
+  "baseModuleContract": {
+    "moduleId": "string",
+    "moduleType": "core | memory | interface | pipelineSupport",
+    "purpose": "string",
+    "inputs": [
+      {
+        "name": "string",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "outputs": [
+      {
+        "name": "string",
+        "type": "string"
+      }
+    ],
+    "allowedOperations": ["string"],
+    "sideEffects": ["none | registryWrite | snapshotWrite | artifactWrite"],
+    "guards": {
+      "requiresZipVerification": false,
+      "mayDelete": false,
+      "mayForcePush": false,
+      "mayChangeDriveSharing": false
+    },
+    "status": "proposed"
+  },
+  "modules": [
+    {
+      "moduleId": "parser",
+      "moduleType": "core",
+      "purpose": "Transform raw command input into normalized tokens, command candidates, and structured intent.",
+      "inputs": [{"name": "rawInput", "type": "string", "required": true}],
+      "outputs": [{"name": "parsedIntent", "type": "object"}],
+      "allowedOperations": ["tokenize", "normalize", "extractCommands"],
+      "sideEffects": ["none"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    },
+    {
+      "moduleId": "processor",
+      "moduleType": "core",
+      "purpose": "Execute safe transformations over parsed intent and produce operation plans.",
+      "inputs": [{"name": "parsedIntent", "type": "object", "required": true}],
+      "outputs": [{"name": "operationPlan", "type": "object"}],
+      "allowedOperations": ["plan", "transform", "validateOperation"],
+      "sideEffects": ["none"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    },
+    {
+      "moduleId": "linker",
+      "moduleType": "core",
+      "purpose": "Connect modules, agents, registry entries, snapshots, and pipeline outputs.",
+      "inputs": [{"name": "operationPlan", "type": "object", "required": true}],
+      "outputs": [{"name": "linkedGraph", "type": "object"}],
+      "allowedOperations": ["link", "resolveReferences", "detectMissingTargets"],
+      "sideEffects": ["none"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    },
+    {
+      "moduleId": "classifier",
+      "moduleType": "core",
+      "purpose": "Classify user commands into CLI, API, agent, snapshot, capsule, or pipeline operations.",
+      "inputs": [{"name": "parsedIntent", "type": "object", "required": true}],
+      "outputs": [{"name": "classification", "type": "object"}],
+      "allowedOperations": ["classify", "score", "route"],
+      "sideEffects": ["none"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    },
+    {
+      "moduleId": "registry",
+      "moduleType": "core",
+      "purpose": "Store and expose definitions, versions, trace events, and generated scaffold metadata.",
+      "inputs": [{"name": "registryEvent", "type": "object", "required": true}],
+      "outputs": [{"name": "registryState", "type": "object"}],
+      "allowedOperations": ["read", "append", "export"],
+      "sideEffects": ["registryWrite"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    },
+    {
+      "moduleId": "capsuleMemory",
+      "moduleType": "memory",
+      "purpose": "Create static capsules and processed snapshots for reversible state tracking.",
+      "inputs": [{"name": "stateObject", "type": "object", "required": true}],
+      "outputs": [{"name": "capsuleOrSnapshot", "type": "object"}],
+      "allowedOperations": ["createCapsule", "createSnapshot", "exportCheckpoint"],
+      "sideEffects": ["snapshotWrite", "artifactWrite"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    },
+    {
+      "moduleId": "apiInterpreter",
+      "moduleType": "interface",
+      "purpose": "Interpret API.GET, API.POST, API.UPDATE, and API.DELETE style commands over supported resources.",
+      "inputs": [{"name": "apiCall", "type": "object", "required": true}],
+      "outputs": [{"name": "apiResult", "type": "object"}],
+      "allowedOperations": ["get", "post", "update", "deleteIntent"],
+      "sideEffects": ["registryWrite"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    },
+    {
+      "moduleId": "cliInterface",
+      "moduleType": "interface",
+      "purpose": "Interpret RUN, EXEC, DO, CAST, OPEN, TRACE, CREATE, EXPORT, IMPORT, DESCRIBE, MAP, and VIEW commands.",
+      "inputs": [{"name": "cliInput", "type": "string", "required": true}],
+      "outputs": [{"name": "cliResult", "type": "object"}],
+      "allowedOperations": ["routeCommand", "formatJson", "emitStatus"],
+      "sideEffects": ["none"],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false},
+      "status": "proposed"
+    }
+  ]
+}
