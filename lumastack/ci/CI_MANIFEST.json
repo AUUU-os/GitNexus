@@ -1,0 +1,45 @@
+{
+  "ciManifestId": "lumastackCiWorkflow20260619",
+  "systemName": "LumaStack v3",
+  "version": "0.1.0-ci",
+  "mode": "safeInterpretiveController",
+  "source": "generatedScaffold",
+  "verifiedFromZip": false,
+  "externalAutonomy": false,
+  "workflowPath": ".github/workflows/lumastack-ci.yml",
+  "workflowPurpose": "Run local LumaStack v3 Python skeleton tests on push and pull request.",
+  "permissions": {
+    "contents": "read"
+  },
+  "triggers": [
+    "push",
+    "pull_request",
+    "workflow_dispatch"
+  ],
+  "jobs": [
+    {
+      "jobId": "test-lumastack",
+      "runsOn": "ubuntu-latest",
+      "pythonVersions": ["3.11"],
+      "commands": [
+        "python -m pip install --upgrade pip",
+        "python -m pip install pytest",
+        "python -m pytest lumastack/tests -q"
+      ]
+    }
+  ],
+  "guardrails": {
+    "deploys": false,
+    "externalWrites": false,
+    "mayDelete": false,
+    "mayForcePush": false,
+    "mayChangeDriveSharing": false,
+    "writeTokenPermissions": false
+  },
+  "nextActions": [
+    "VERIFY ci workflow",
+    "EXPORT implementation plan",
+    "CREATE handoff packet"
+  ],
+  "omegaSignal": "AUUU"
+}
