@@ -1,0 +1,126 @@
+{
+  "contractPack": "LumaStack v3 pipeline contracts",
+  "version": "0.1.0-scaffold",
+  "mode": "safeInterpretiveController",
+  "verifiedFromZip": false,
+  "source": "generatedScaffold",
+  "contractRules": {
+    "naming": "camelCase",
+    "format": "json",
+    "pipelineIdRequired": true,
+    "stepsRequired": true,
+    "stepStatusRequired": true,
+    "traceRequired": true,
+    "rollbackPlanRequiredForWrites": true,
+    "externalAutonomyAllowed": false,
+    "deleteAllowedByDefault": false,
+    "forcePushAllowedByDefault": false,
+    "publicSharingAllowedByDefault": false
+  },
+  "basePipelineContract": {
+    "pipelineId": "string",
+    "pipelineType": "boot | command | api | memory | release | validation",
+    "purpose": "string",
+    "inputs": [{"name": "string", "type": "string", "required": true}],
+    "outputs": [{"name": "string", "type": "string"}],
+    "steps": [
+      {
+        "step": 1,
+        "name": "string",
+        "agent": "string | null",
+        "module": "string | null",
+        "requires": ["string"],
+        "emits": ["string"],
+        "sideEffects": ["none | registryAppend | snapshotCreate | artifactCreate | externalWrite"],
+        "rollback": "string | null"
+      }
+    ],
+    "guards": {
+      "requiresZipVerification": false,
+      "mayDelete": false,
+      "mayForcePush": false,
+      "mayChangeDriveSharing": false,
+      "requiresApprovalForExternalWrite": true
+    },
+    "status": "proposed"
+  },
+  "pipelines": [
+    {
+      "pipelineId": "fullBootPipeline",
+      "pipelineType": "boot",
+      "purpose": "Boot the interpretive scaffold and mount core modules, agents, interfaces, and memory state.",
+      "inputs": [{"name": "bootIntent", "type": "object", "required": true}],
+      "outputs": [{"name": "bootState", "type": "object"}],
+      "steps": [
+        {"step": 1, "name": "input", "agent": null, "module": "cliInterface", "requires": ["bootIntent"], "emits": ["rawBootIntent"], "sideEffects": ["none"], "rollback": null},
+        {"step": 2, "name": "parse", "agent": "lumaParserAgent", "module": "parser", "requires": ["rawBootIntent"], "emits": ["parsedIntent"], "sideEffects": ["none"], "rollback": null},
+        {"step": 3, "name": "classify", "agent": "lumaClassifierAgent", "module": "classifier", "requires": ["parsedIntent"], "emits": ["classification"], "sideEffects": ["none"], "rollback": null},
+        {"step": 4, "name": "process", "agent": "lumaProcessorAgent", "module": "processor", "requires": ["classification"], "emits": ["operationPlan"], "sideEffects": ["none"], "rollback": null},
+        {"step": 5, "name": "link", "agent": "lumaLinkerAgent", "module": "linker", "requires": ["operationPlan"], "emits": ["linkedGraph"], "sideEffects": ["none"], "rollback": null},
+        {"step": 6, "name": "mountRegistry", "agent": "lumaRegistryAgent", "module": "registry", "requires": ["linkedGraph"], "emits": ["registryState"], "sideEffects": ["registryAppend"], "rollback": "append compensating registry event"},
+        {"step": 7, "name": "snapshot", "agent": "lumaPipelineAgent", "module": "capsuleMemory", "requires": ["registryState"], "emits": ["bootSnapshot"], "sideEffects": ["snapshotCreate"], "rollback": "restore previous snapshot"},
+        {"step": 8, "name": "omegaHowl", "agent": "omegaHowlAgent", "module": "cliInterface", "requires": ["bootSnapshot"], "emits": ["omegaSignal"], "sideEffects": ["none"], "rollback": null}
+      ],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false, "requiresApprovalForExternalWrite": true},
+      "status": "proposed"
+    },
+    {
+      "pipelineId": "commandParsePipeline",
+      "pipelineType": "command",
+      "purpose": "Normalize user input and route it into CLI, API, snapshot, capsule, agent, or pipeline mode.",
+      "inputs": [{"name": "rawInput", "type": "string", "required": true}],
+      "outputs": [{"name": "routedCommand", "type": "object"}],
+      "steps": [
+        {"step": 1, "name": "input", "agent": null, "module": "cliInterface", "requires": ["rawInput"], "emits": ["rawCommand"], "sideEffects": ["none"], "rollback": null},
+        {"step": 2, "name": "parse", "agent": "lumaParserAgent", "module": "parser", "requires": ["rawCommand"], "emits": ["parsedIntent"], "sideEffects": ["none"], "rollback": null},
+        {"step": 3, "name": "classify", "agent": "lumaClassifierAgent", "module": "classifier", "requires": ["parsedIntent"], "emits": ["classification"], "sideEffects": ["none"], "rollback": null},
+        {"step": 4, "name": "route", "agent": "lumaProcessorAgent", "module": "processor", "requires": ["classification"], "emits": ["routedCommand"], "sideEffects": ["none"], "rollback": null}
+      ],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false, "requiresApprovalForExternalWrite": true},
+      "status": "proposed"
+    },
+    {
+      "pipelineId": "apiRequestPipeline",
+      "pipelineType": "api",
+      "purpose": "Interpret API style operations against supported LumaStack resources.",
+      "inputs": [{"name": "apiRequest", "type": "object", "required": true}],
+      "outputs": [{"name": "apiResult", "type": "object"}],
+      "steps": [
+        {"step": 1, "name": "parseApiCall", "agent": "lumaParserAgent", "module": "parser", "requires": ["apiRequest"], "emits": ["parsedApiCall"], "sideEffects": ["none"], "rollback": null},
+        {"step": 2, "name": "authorizeIntent", "agent": "lumaClassifierAgent", "module": "classifier", "requires": ["parsedApiCall"], "emits": ["apiClassification"], "sideEffects": ["none"], "rollback": null},
+        {"step": 3, "name": "executeIntent", "agent": "lumaProcessorAgent", "module": "apiInterpreter", "requires": ["apiClassification"], "emits": ["apiResult"], "sideEffects": ["registryAppend"], "rollback": "append compensating registry event"}
+      ],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false, "requiresApprovalForExternalWrite": true},
+      "status": "proposed"
+    },
+    {
+      "pipelineId": "capsuleSavePipeline",
+      "pipelineType": "memory",
+      "purpose": "Create a static capsule or processed snapshot from current system state.",
+      "inputs": [{"name": "stateObject", "type": "object", "required": true}],
+      "outputs": [{"name": "capsuleOrSnapshot", "type": "object"}],
+      "steps": [
+        {"step": 1, "name": "collectState", "agent": "lumaRegistryAgent", "module": "registry", "requires": ["stateObject"], "emits": ["collectedState"], "sideEffects": ["none"], "rollback": null},
+        {"step": 2, "name": "validateState", "agent": "lumaProcessorAgent", "module": "processor", "requires": ["collectedState"], "emits": ["validatedState"], "sideEffects": ["none"], "rollback": null},
+        {"step": 3, "name": "writeSnapshot", "agent": "lumaPipelineAgent", "module": "capsuleMemory", "requires": ["validatedState"], "emits": ["capsuleOrSnapshot"], "sideEffects": ["snapshotCreate", "artifactCreate"], "rollback": "mark snapshot superseded"}
+      ],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false, "requiresApprovalForExternalWrite": true},
+      "status": "proposed"
+    },
+    {
+      "pipelineId": "releaseSnapshotPipeline",
+      "pipelineType": "release",
+      "purpose": "Prepare release checkpoint artifacts and record known limits before a handoff.",
+      "inputs": [{"name": "releaseIntent", "type": "object", "required": true}],
+      "outputs": [{"name": "releaseSnapshot", "type": "object"}],
+      "steps": [
+        {"step": 1, "name": "collectArtifacts", "agent": "lumaRegistryAgent", "module": "registry", "requires": ["releaseIntent"], "emits": ["artifactList"], "sideEffects": ["none"], "rollback": null},
+        {"step": 2, "name": "validateContracts", "agent": "lumaProcessorAgent", "module": "processor", "requires": ["artifactList"], "emits": ["validationReport"], "sideEffects": ["none"], "rollback": null},
+        {"step": 3, "name": "createReleaseSnapshot", "agent": "lumaPipelineAgent", "module": "capsuleMemory", "requires": ["validationReport"], "emits": ["releaseSnapshot"], "sideEffects": ["snapshotCreate", "artifactCreate"], "rollback": "create superseding release snapshot"},
+        {"step": 4, "name": "signal", "agent": "omegaHowlAgent", "module": "cliInterface", "requires": ["releaseSnapshot"], "emits": ["omegaSignal"], "sideEffects": ["none"], "rollback": null}
+      ],
+      "guards": {"requiresZipVerification": false, "mayDelete": false, "mayForcePush": false, "mayChangeDriveSharing": false, "requiresApprovalForExternalWrite": true},
+      "status": "proposed"
+    }
+  ]
+}
