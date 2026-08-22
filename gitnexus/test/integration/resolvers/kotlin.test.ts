@@ -310,6 +310,70 @@ describe('Kotlin alias import resolution', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Declared-package resolution (#2960): external imports cannot suffix-match a
+// local lookalike, and Kotlin declarations remain independent of file layout.
+// ---------------------------------------------------------------------------
+
+describe('Kotlin declared-package import resolution (#2960)', () => {
+  let result: PipelineResult;
+
+  beforeAll(async () => {
+    result = await runPipelineFromRepo(
+      path.join(FIXTURES, 'kotlin-import-package-evidence'),
+      () => {},
+    );
+  }, 60000);
+
+  it('does not emit an IMPORTS edge from org.junit.Assert to vendor/Assert.kt', () => {
+    const imports = getRelationships(result, 'IMPORTS');
+    expect(
+      imports.some(
+        (edge) =>
+          edge.sourceFilePath === 'app/Main.kt' && edge.targetFilePath === 'vendor/Assert.kt',
+      ),
+    ).toBe(false);
+  });
+
+  it('resolves a type and top-level function from a flattened source file', () => {
+    const imports = getRelationships(result, 'IMPORTS');
+    expect(
+      imports.some(
+        (edge) =>
+          edge.sourceFilePath === 'app/Main.kt' && edge.targetFilePath === 'flat/UserSource.kt',
+      ),
+    ).toBe(true);
+
+    const calls = getRelationships(result, 'CALLS');
+    expect(
+      calls.some(
+        (edge) =>
+          edge.source === 'run' &&
+          edge.target === 'save' &&
+          edge.targetFilePath === 'flat/UserSource.kt',
+      ),
+    ).toBe(true);
+    expect(
+      calls.some(
+        (edge) =>
+          edge.source === 'run' &&
+          edge.target === 'loadUser' &&
+          edge.targetFilePath === 'flat/UserSource.kt',
+      ),
+    ).toBe(true);
+  });
+
+  it('resolves a member import to its top-level object file', () => {
+    const imports = getRelationships(result, 'IMPORTS');
+    expect(
+      imports.some(
+        (edge) =>
+          edge.sourceFilePath === 'app/Main.kt' && edge.targetFilePath === 'support/Tools.kt',
+      ),
+    ).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Constructor-call resolution: User("alice") resolves to User constructor
 // ---------------------------------------------------------------------------
 
@@ -2928,5 +2992,62 @@ describe('Kotlin functional (fun) interfaces', () => {
   it('still resolves heritage on a class implementing a plain interface', () => {
     const implements_ = getRelationships(result, 'IMPLEMENTS');
     expect(edgeSet(implements_)).toContain('Button → Plain');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Issue #2545: an anonymous `object { ... }` expression has no scope
+// boundary of its own, so a method's name auto-hoists past it into
+// whatever lexically encloses it -- letting an unrelated same-file call
+// to a builtin like `println` incorrectly resolve to it.
+// ---------------------------------------------------------------------------
+
+describe('Kotlin anonymous object-expression method scoping (#2545)', () => {
+  let result: PipelineResult;
+
+  beforeAll(async () => {
+    result = await runPipelineFromRepo(
+      path.join(FIXTURES, 'kotlin-object-literal-scope'),
+      () => {},
+    );
+  }, 60000);
+
+  it('does not resolve the builtin println() call to the anonymous object-expression method', () => {
+    const calls = getRelationships(result, 'CALLS');
+    const printlnCall = calls.find((c) => c.source === 'callExternal' && c.target === 'println');
+    expect(printlnCall).toBeUndefined();
+  });
+
+  it('still extracts the anonymous object-expression method as a Method', () => {
+    expect(getNodesByLabel(result, 'Method')).toContain('println');
+  });
+});
+
+describe('Kotlin instance-ownership free-call gate (#2563)', () => {
+  let result: PipelineResult;
+
+  beforeAll(async () => {
+    result = await runPipelineFromRepo(path.join(FIXTURES, 'kotlin-instance-ownership'), () => {});
+  }, 60000);
+
+  it("does not resolve a bare call to an unrelated same-file class's method", () => {
+    const leaked = getRelationships(result, 'CALLS').find(
+      (call) => call.source === 'run' && call.target === 'collide',
+    );
+    expect(leaked).toBeUndefined();
+  });
+
+  it('preserves own, inherited, outer-instance, and anonymous-object sibling calls', () => {
+    const calls = getRelationships(result, 'CALLS');
+    expect(calls.find((call) => call.source === 'callOwn' && call.target === 'own')).toBeDefined();
+    expect(
+      calls.find((call) => call.source === 'callInherited' && call.target === 'inherited'),
+    ).toBeDefined();
+    expect(
+      calls.find((call) => call.source === 'callSibling' && call.target === 'sibling'),
+    ).toBeDefined();
+    expect(
+      calls.find((call) => call.source === 'callOuter' && call.target === 'outerMethod'),
+    ).toBeDefined();
   });
 });

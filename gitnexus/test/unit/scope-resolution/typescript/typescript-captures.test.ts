@@ -142,10 +142,30 @@ describe('emitTsScopeCaptures — declarations', () => {
     expect(m!['@declaration.name'].text).toBe('Status');
   });
 
-  it('captures type-alias declarations under @declaration.type', () => {
-    const m = findMatch('type ID = string;', (t) => t.includes('@declaration.type'));
+  // The tag is `@declaration.type_alias`, matching Kotlin and Dart. It was
+  // `@declaration.type`, which `normalizeNodeLabel` does not recognize — it
+  // accepts `typealias` / `type_alias` and has no `type` case — so the capture
+  // fired but mapped to NO label and TypeScript aliases produced no
+  // scope-resolution def at all. This test passed the whole time because it
+  // asserted only that the capture existed, never that it resolved to
+  // anything; the label assertion below is what stops a dead tag being pinned
+  // again.
+  it('captures type-alias declarations under @declaration.type_alias', () => {
+    const m = findMatch('type ID = string;', (t) => t.includes('@declaration.type_alias'));
     expect(m).toBeDefined();
     expect(m!['@declaration.name'].text).toBe('ID');
+  });
+
+  it('maps the type-alias capture to a real NodeLabel', () => {
+    const m = findMatch('type ID = string;', (t) => t.includes('@declaration.type_alias'));
+    const anchor = Object.keys(m!).find(
+      (k) => k.startsWith('@declaration.') && k !== '@declaration.name',
+    );
+    expect(anchor).toBeDefined();
+    // The kind string the extractor derives from the anchor must be one
+    // `normalizeNodeLabel` accepts, or the declaration silently vanishes.
+    const kind = anchor!.slice('@declaration.'.length);
+    expect(['typealias', 'type_alias']).toContain(kind);
   });
 
   it('captures namespace declarations under @declaration.namespace', () => {
@@ -686,5 +706,44 @@ describe('emitTsScopeCaptures — #1876 array-method-callback narrowing', () => 
           m['@declaration.name']?.text === 'health-check',
       ),
     ).toBe(true);
+  });
+});
+
+describe('emitTsScopeCaptures — value-position references (#2437)', () => {
+  it('captures a longhand pair value identifier as @reference.value-ref with its key', () => {
+    const match = findMatch(
+      'function emitHook(): void {}\nexport const provider = { emitScopeCaptures: emitHook };',
+      (t) => t.includes('@reference.value-ref'),
+    );
+    expect(match).toBeDefined();
+    expect(match!['@reference.name'].text).toBe('emitHook');
+    expect(match!['@reference.property-key'].text).toBe('emitScopeCaptures');
+  });
+
+  it('captures a shorthand property as @reference.value-ref with key = name', () => {
+    const match = findMatch(
+      'function emitHook(): void {}\nexport const provider = { emitHook };',
+      (t) => t.includes('@reference.value-ref'),
+    );
+    expect(match).toBeDefined();
+    expect(match!['@reference.name'].text).toBe('emitHook');
+    expect(match!['@reference.property-key'].text).toBe('emitHook');
+  });
+
+  it('does not fire on destructuring shorthand', () => {
+    expect(
+      countMatches('const o = { a: 1 };\nconst { a } = o;', (t) =>
+        t.includes('@reference.value-ref'),
+      ),
+    ).toBe(0);
+  });
+
+  it('does not fire on a pair whose value is a call expression', () => {
+    expect(
+      countMatches(
+        'function make(): number { return 1; }\nexport const provider = { cfgVisitor: make() };',
+        (t) => t.includes('@reference.value-ref'),
+      ),
+    ).toBe(0);
   });
 });

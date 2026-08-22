@@ -7,6 +7,9 @@
 
 import type { LocalBackend } from './local/local-backend.js';
 import { checkStaleness } from './staleness.js';
+import { loadMeta } from '../storage/repo-manager.js';
+import { ANALYZER_RUNNER_IDENTITY_SCHEMA_VERSION } from '../core/analyzer-identity.js';
+import { getIndexIncompleteReasons } from '../core/index-freshness.js';
 
 export interface ResourceDefinition {
   uri: string;
@@ -311,9 +314,17 @@ async function getContextResource(backend: LocalBackend, repoName?: string): Pro
     return 'error: No codebase loaded. Run: gitnexus analyze';
   }
 
-  // Check staleness
+  // Read fresh metadata from disk on every context resource read to avoid showing
+  // a stale staleness banner or outdated stats after an out-of-process
+  // `analyze --index-only` refresh. The RepoHandle is cached in-memory and only
+  // refreshes on registry misses, so its lastCommit/stats can lag behind the
+  // on-disk state (#2438). Mirrors the ensureInitialized hot-swap pattern.
+  const freshMeta = await loadMeta(repo.storagePath).catch(() => null);
+  const incompleteReasons = getIndexIncompleteReasons(freshMeta);
+
+  // Check staleness using the current on-disk lastCommit (not the cached handle)
   const repoPath = repo.repoPath;
-  const lastCommit = repo.lastCommit || 'HEAD';
+  const lastCommit = freshMeta?.lastCommit ?? repo.lastCommit ?? 'HEAD';
   const staleness = repoPath
     ? checkStaleness(repoPath, lastCommit)
     : { isStale: false, commitsBehind: 0 };
@@ -325,11 +336,32 @@ async function getContextResource(backend: LocalBackend, repoName?: string): Pro
     lines.push(`staleness: "${staleness.hint}"`);
   }
 
+  // A JSON object is also a valid YAML flow mapping. Keeping the versioned
+  // receipt intact lets agents compare every identity field without parsing a
+  // lossy human rendering; null explicitly means legacy/unknown provenance.
+  lines.push('');
+  lines.push('index:');
+  lines.push(`  commit: ${JSON.stringify(lastCommit)}`);
+  lines.push(`  indexed_at: ${JSON.stringify(freshMeta?.indexedAt ?? null)}`);
+  lines.push(`  runner_identity: ${JSON.stringify(freshMeta?.runnerIdentity ?? null)}`);
+  lines.push(`  incomplete_reasons: ${JSON.stringify(incompleteReasons)}`);
+  const indexedRunnerSchema = (freshMeta?.runnerIdentity as { schemaVersion?: unknown } | undefined)
+    ?.schemaVersion;
+  lines.push(
+    `  runner_identity_schema_status: ${JSON.stringify(
+      indexedRunnerSchema === ANALYZER_RUNNER_IDENTITY_SCHEMA_VERSION
+        ? 'current'
+        : 'legacy-or-unknown',
+    )}`,
+  );
+
+  // Use fresh stats from disk meta when available; fall back to cached context
+  const freshStats = freshMeta?.stats;
   lines.push('');
   lines.push('stats:');
-  lines.push(`  files: ${context.stats.fileCount}`);
-  lines.push(`  symbols: ${context.stats.functionCount}`);
-  lines.push(`  processes: ${context.stats.processCount}`);
+  lines.push(`  files: ${freshStats?.files ?? context.stats.fileCount}`);
+  lines.push(`  symbols: ${freshStats?.nodes ?? context.stats.functionCount}`);
+  lines.push(`  processes: ${freshStats?.processes ?? context.stats.processCount}`);
   lines.push('');
   lines.push('tools_available:');
   lines.push('  - query: Process-grouped code intelligence (execution flows related to a concept)');
@@ -343,7 +375,10 @@ async function getContextResource(backend: LocalBackend, repoName?: string): Pro
   lines.push('  - cypher: Raw graph queries');
   lines.push('  - list_repos: Discover all indexed repositories');
   lines.push('');
-  lines.push('re_index: Run `npx gitnexus analyze` in terminal if data is stale');
+  lines.push(
+    're_index: Run `npx gitnexus analyze --index-only` in terminal if data is stale ' +
+      '(drop --index-only to also refresh AGENTS.md/CLAUDE.md and skills)',
+  );
   lines.push('');
   lines.push('resources_available:');
   lines.push('  - gitnexus://repos: All indexed repositories');
@@ -465,7 +500,7 @@ relationships:
   - IMPORTS: Module imports
   - EXTENDS: Class inheritance
   - IMPLEMENTS: Interface implementation
-  - HAS_METHOD: Class/Struct/Interface owns a Method
+  - HAS_METHOD: Class/Struct/Interface owns a Method; also a Function acting as a pre-ES6 constructor (prototype assignment)
   - HAS_PROPERTY: Class/Struct/Interface owns a Property (field)
   - ACCESSES: Function/Method reads or writes a Property (reason: 'read' or 'write')
   - METHOD_OVERRIDES: Method overrides another Method (MRO)

@@ -26,6 +26,8 @@ export const en = {
   'status.indexed': 'Indexed',
   'status.indexedCommit': 'Indexed commit',
   'status.currentCommit': 'Current commit',
+  'status.indexRunnerIdentity': 'Indexed analyzer runner identity',
+  'status.currentRunnerIdentity': 'Current analyzer runner identity',
   'status.branch': 'Branch',
   'status.detached': '(detached HEAD)',
   'status.workspaceIndexLabel':
@@ -58,11 +60,19 @@ export const en = {
   'tool.usage.impact':
     'Usage: gitnexus impact <symbol_name> [--uid <uid>] [--file <path>] [--kind <kind>] [--direction upstream|downstream]',
   'tool.usage.trace':
-    'Usage: gitnexus trace <from> <to> [--from-uid <uid>] [--to-uid <uid>] [--depth <n>]',
+    'Usage: gitnexus trace <from> <to> [-f|--file <path>] [--from-file <path>] [--to-file <path>] [--from-uid <uid>] [--to-uid <uid>] [--depth <n>]',
   'tool.usage.cypher': 'Usage: gitnexus cypher <cypher_query>',
   'tool.warn.unknownKind':
     "--kind '{{kind}}' is not a known symbol kind (e.g. Function, Class, Method); it will not narrow the result.",
   'tool.detectChanges.noChanges': 'No changes detected.',
+  'tool.detectChanges.partial':
+    'PARTIAL RESULT: a graph query failed, so changed symbols may be missing. Do not read this as a clean pre-commit check.',
+  'tool.detectChanges.truncated':
+    'LISTING CAPPED: the changed-symbol list was capped, so it does not name every changed symbol. The counts and risk level still cover all of them.',
+  // The reassurance above is only true on its own. When the run also degraded,
+  // `changed_count` was summed from the batches that SUCCEEDED, so it is a floor.
+  'tool.detectChanges.truncatedDegraded':
+    'LISTING CAPPED: the changed-symbol list was capped. The run also degraded, so the counts are a lower bound, not a total.',
   'tool.detectChanges.changesSummary': 'Changes: {{files}} files, {{symbols}} symbols',
   'tool.detectChanges.affectedProcesses': 'Affected processes: {{count}}',
   'tool.detectChanges.riskLevel': 'Risk level: {{risk}}',
@@ -182,8 +192,10 @@ export const en = {
   'help.option.analyze.skipAgentsMd':
     'Skip updating the gitnexus section in AGENTS.md and CLAUDE.md',
   'help.option.analyze.noStats': 'Omit volatile file/symbol counts from AGENTS.md and CLAUDE.md',
+  'help.option.analyze.selfCommit':
+    'Auto-commit AGENTS.md/CLAUDE.md changes after analyze (opt-in, off by default). Scoped to only those two files (never `git add -A`); no-ops if neither exists, neither changed, or the repo has no git identity configured.',
   'help.option.analyze.skipSkills':
-    'Skip installing standard GitNexus skill files under .claude/skills/gitnexus/. Does not suppress community skills from --skills (those use .claude/skills/generated/). Use --index-only to skip all AI-context file injection.',
+    'Skip installing standard GitNexus skill files directly under .claude/skills/ and .agents/skills/. Does not suppress community skills from --skills (those use .claude/skills/gitnexus-area-*). Use --index-only to skip all AI-context file injection.',
   'help.option.analyze.indexOnly':
     'Pure index mode: skip all file injection (AGENTS.md, CLAUDE.md, skills)',
   'help.option.skipGit':
@@ -222,19 +234,20 @@ export const en = {
     'Clean parked LadybugDB recovery sidecars (missing-shadow WAL quarantines and dirty-recovery parks)',
   'help.option.wiki.force': 'Force full regeneration even if up to date',
   'help.option.wiki.provider':
-    'LLM provider: openai, openrouter, azure, custom, cursor, claude, codex, or opencode (default: openai)',
-  'help.option.wiki.model': 'LLM model or Azure deployment name (default: minimax/minimax-m2.5)',
+    'LLM provider: minimax, openai, openrouter, azure, custom, cursor, claude, codex, or opencode (default: minimax)',
+  'help.option.wiki.model': 'LLM model or deployment name (default: MiniMax-M3)',
   'help.option.wiki.baseUrl':
     'LLM API base URL. Azure v1: https://{resource}.openai.azure.com/openai/v1',
   'help.option.wiki.apiKey': 'LLM API key or Azure api-key (saved to ~/.gitnexus/config.json)',
   'help.option.wiki.apiVersion':
     'Azure api-version query param, e.g. 2024-10-21 (legacy Azure API only)',
-  'help.option.wiki.reasoningModel':
-    'Mark deployment as reasoning model (o1/o3/o4-mini) — strips temperature, uses max_completion_tokens',
-  'help.option.wiki.noReasoningModel': 'Disable reasoning model mode (overrides saved config)',
+  'help.option.wiki.reasoningModel': 'Enable reasoning mode; MiniMax-M3 uses adaptive thinking',
+  'help.option.wiki.noReasoningModel': 'Disable reasoning mode; MiniMax-M3 disables thinking',
   'help.option.wiki.concurrency': 'Parallel LLM calls (default: 3)',
   'help.option.wiki.timeout': 'LLM request timeout in seconds (default: disabled)',
   'help.option.wiki.retries': 'Max LLM retry attempts per request (default: 3)',
+  'help.option.wiki.allowInsecureConnection':
+    'Allow exact host(s) for http:// LLM base URLs (comma-separated; HTTPS is preferred)',
   'help.option.wiki.gist': 'Publish wiki as a public GitHub Gist after generation',
   'help.option.wiki.review':
     'Stop after grouping to review module structure before generating pages',
@@ -273,7 +286,7 @@ export const en = {
   'help.option.cypher.limit': 'Max result rows to return',
   'help.option.check.cycles': 'Detect circular imports and fail when any are found',
   'help.option.evalServer.host':
-    'Bind address (default: 127.0.0.1, use 0.0.0.0 to expose to all interfaces)',
+    'Bind address or resolvable hostname (default: 127.0.0.1; non-loopback requires GITNEXUS_AUTH_TOKEN; hostnames resolve to IPv4)',
   'help.option.evalServer.idleTimeout': 'Auto-shutdown after N seconds idle (0 = disabled)',
   'help.option.embeddings.install.cuda':
     "Also download the CUDA GPU binaries (runs onnxruntime-node's NuGet postinstall; set GLOBAL_AGENT_HTTPS_PROXY behind a proxy)",
@@ -284,6 +297,7 @@ export const en = {
   'help.option.group.sync.exactOnly': 'Exact match only',
   'help.option.group.sync.allowStale': 'Skip stale index warnings',
   'help.option.group.sync.verbose': 'Show each cross-link detail',
+  'help.option.status.json': 'Emit machine-readable index and analyzer provenance',
   'help.option.json': 'JSON output',
   'help.option.group.impact.target': 'Symbol or file name to analyze',
   'help.option.group.impact.repo':
@@ -299,6 +313,8 @@ export const en = {
   'help.option.group.contracts.type': 'Filter by contract type',
   'help.option.group.contracts.repo': 'Filter by repo',
   'help.option.group.contracts.unmatched': 'Show only unmatched contracts',
+  'help.identityCache.environment':
+    '\nAnalyzer identity cache:\n  GITNEXUS_ANALYZER_IDENTITY_CACHE_DIR=/absolute/protected/dir\n    Operator-trusted persistent cache for warm cross-process status. The directory must pre-exist, be outside the GitNexus package/build roots, and contain no symlink or junction components. Defaults remain fail-closed on platforms without POSIX ownership APIs.',
   'help.analyze.environment':
-    '\nEnvironment variables:\n  GITNEXUS_NO_GITIGNORE=1   Skip .gitignore parsing (still reads .gitnexusignore)\n  GITNEXUS_MAX_FILE_SIZE=N  Override large-file skip threshold (KB). Default 512, max 32768.\n  GITNEXUS_WORKER_SUB_BATCH_TIMEOUT_MS=N  Worker idle timeout in milliseconds. Default 30000.\n  GITNEXUS_WAL_CHECKPOINT_THRESHOLD=N  LadybugDB WAL auto-checkpoint threshold in bytes (default 67108864 = 64 MiB; -1 keeps Ladybug stock ~16 MiB).\n  GITNEXUS_WORKER_SUB_BATCH_MAX_BYTES=N  Worker job byte budget. Default 8388608.\n  GITNEXUS_WORKER_POOL_SIZE=N  Parse worker count override. Default cores-1 capped at 16.\n  GITNEXUS_PARSE_CHUNK_CONCURRENCY=N  Concurrent in-flight parse chunks. Default 2.\n  GITNEXUS_WORKER_MAX_RESPAWNS_PER_SLOT=N  Max replacement spawns per slot before drop. Default 3.\n  GITNEXUS_WORKER_MAX_CUMULATIVE_TIMEOUT_MS=N  Total retry wall-time per job. Default 5x sub-batch timeout.\n  GITNEXUS_WORKER_CONSECUTIVE_FAILURE_THRESHOLD=N  Per-slot deaths to trip circuit breaker. Default max(3, poolSize).\n  GITNEXUS_WORKER_SHUTDOWN_DRAIN_MS=N  Max wait at pool shutdown for a retired worker still inside native code (terminated at its next safe point instead of aborting the process). Default 30000.\n  GITNEXUS_CPP_CAPTURE_BUDGET_MS=N  Per-file wall-clock budget for C++ capture extraction; on breach the file keeps partial captures with a warning. Default 20000.\n  GITNEXUS_EMBEDDING_THREADS=N  Limit local ONNX CPU threads for --embeddings.\n  GITNEXUS_SEMANTIC_EXACT_SCAN_LIMIT=N  Max embedding chunks for exact-scan fallback. Default 10000.\n  GITNEXUS_VECTOR_MAX_DISTANCE=N  Max accepted semantic/vector cosine distance (0 < N <= 2; higher values clamp to 2). Default 0.6 for MCP, 0.5 elsewhere.\n\nFlags override the corresponding env vars when both are provided.\n\nTip: `.gitnexusignore` supports `.gitignore`-style negation. Add e.g.\n     `!__tests__/` to index a directory that is auto-filtered by default (#771).',
+    '\nEnvironment variables:\n  GITNEXUS_NO_GITIGNORE=1   Skip .gitignore parsing (still reads .gitnexusignore)\n  GITNEXUS_MAX_FILE_SIZE=N  Override large-file skip threshold (KB). Default 512, max 32768.\n  GITNEXUS_ANALYZER_IDENTITY_CACHE_DIR=/absolute/protected/dir  Operator-trusted persistent analyzer identity cache; must pre-exist, be outside package/build roots, and contain no symlink/junction components.\n  GITNEXUS_WORKER_SUB_BATCH_TIMEOUT_MS=N  Worker idle timeout in milliseconds. Default 30000.\n  GITNEXUS_WAL_CHECKPOINT_THRESHOLD=N  LadybugDB WAL auto-checkpoint threshold in bytes (default 67108864 = 64 MiB; -1 keeps Ladybug stock ~16 MiB).\n  GITNEXUS_WORKER_SUB_BATCH_MAX_BYTES=N  Worker job byte budget. Default 8388608.\n  GITNEXUS_WORKER_POOL_SIZE=N  Parse worker count override. Default cores-1 capped at 16.\n  GITNEXUS_PARSE_CHUNK_CONCURRENCY=N  Concurrent in-flight parse chunks. Default 2.\n  GITNEXUS_WORKER_MAX_RESPAWNS_PER_SLOT=N  Max replacement spawns per slot before drop. Default 3.\n  GITNEXUS_WORKER_MAX_CUMULATIVE_TIMEOUT_MS=N  Total retry wall-time per job. Default 5x sub-batch timeout.\n  GITNEXUS_WORKER_CONSECUTIVE_FAILURE_THRESHOLD=N  Per-slot deaths to trip circuit breaker. Default max(3, poolSize).\n  GITNEXUS_WORKER_SHUTDOWN_DRAIN_MS=N  Max wait at pool shutdown for a retired worker still inside native code (terminated at its next safe point instead of aborting the process). Default 30000.\n  GITNEXUS_CPP_CAPTURE_BUDGET_MS=N  Per-file wall-clock budget for C++ capture extraction; on breach the file keeps partial captures with a warning. Default 20000.\n  GITNEXUS_EMBEDDING_THREADS=N  Limit local ONNX CPU threads for --embeddings.\n  GITNEXUS_SEMANTIC_EXACT_SCAN_LIMIT=N  Max embedding chunks for exact-scan fallback. Default 10000.\n  GITNEXUS_VECTOR_MAX_DISTANCE=N  Max accepted semantic/vector cosine distance (0 < N <= 2; higher values clamp to 2). Default 0.6 for MCP, 0.5 elsewhere.\n\nFlags override the corresponding env vars when both are provided.\n\nTip: `.gitnexusignore` supports `.gitignore`-style negation. Add e.g.\n     `!__tests__/` to index a directory that is auto-filtered by default (#771).',
 } as const;

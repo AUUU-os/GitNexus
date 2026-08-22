@@ -5,7 +5,11 @@
 
 import { Command } from 'commander';
 import { createRequire } from 'node:module';
-import { createLazyAction, createLbugLazyAction } from './lazy-action.js';
+import {
+  createAnalyzerLbugLazyAction,
+  createLazyAction,
+  createLbugLazyAction,
+} from './lazy-action.js';
 import { EMBEDDING_DIMS_ERROR, normalizeEmbeddingDims } from './embedding-dims.js';
 import { registerGroupCommands } from './group.js';
 import { localizeCliHelp } from './help-i18n.js';
@@ -89,9 +93,15 @@ program
   )
   .option('--no-stats', 'Omit volatile file/symbol counts from AGENTS.md and CLAUDE.md')
   .option(
+    '--self-commit',
+    'Auto-commit AGENTS.md/CLAUDE.md changes after analyze (opt-in, off by default). ' +
+      'Scoped to only those two files (never `git add -A`); no-ops if neither exists, ' +
+      'neither changed, or the repo has no git identity configured.',
+  )
+  .option(
     '--skip-skills',
-    'Skip installing standard GitNexus skill files under .claude/skills/gitnexus/. ' +
-      'Does not suppress community skills from --skills (those use .claude/skills/generated/). ' +
+    'Skip installing standard GitNexus skill files directly under .claude/skills/ and .agents/skills/. ' +
+      'Does not suppress community skills from --skills (those use .claude/skills/gitnexus-area-*). ' +
       'Use --index-only to skip all AI-context file injection.',
   )
   .option('--index-only', 'Pure index mode: skip all file injection (AGENTS.md, CLAUDE.md, skills)')
@@ -188,7 +198,14 @@ program
       process.env.GITNEXUS_EMBEDDING_DIMS = dimsEnvBaseline;
     }
   })
-  .action(createLbugLazyAction(() => import('./analyze.js'), 'analyzeCommand'));
+  .action(
+    createAnalyzerLbugLazyAction(
+      () => import('../core/analyzer-identity.js'),
+      () => import('./analyze.js'),
+      'analyzeCommandWithRunnerIdentity',
+      import.meta.url,
+    ),
+  );
 
 program
   .command('index [path...]')
@@ -233,6 +250,8 @@ program
 program
   .command('status')
   .description('Show index status for current repo')
+  .option('--json', 'Emit machine-readable index and analyzer provenance')
+  .addHelpText('after', () => t('help.identityCache.environment'))
   .action(createLazyAction(() => import('./status.js'), 'statusCommand'));
 
 program
@@ -284,9 +303,9 @@ program
   .option('-f, --force', 'Force full regeneration even if up to date')
   .option(
     '--provider <provider>',
-    'LLM provider: openai, openrouter, azure, custom, cursor, claude, codex, or opencode (default: openai)',
+    'LLM provider: minimax, openai, openrouter, azure, custom, cursor, claude, codex, or opencode (default: minimax)',
   )
-  .option('--model <model>', 'LLM model or Azure deployment name (default: minimax/minimax-m2.5)')
+  .option('--model <model>', 'LLM model or deployment name (default: MiniMax-M3)')
   .option(
     '--base-url <url>',
     'LLM API base URL. Azure v1: https://{resource}.openai.azure.com/openai/v1',
@@ -296,14 +315,15 @@ program
     '--api-version <version>',
     'Azure api-version query param, e.g. 2024-10-21 (legacy Azure API only)',
   )
-  .option(
-    '--reasoning-model',
-    'Mark deployment as reasoning model (o1/o3/o4-mini) — strips temperature, uses max_completion_tokens',
-  )
-  .option('--no-reasoning-model', 'Disable reasoning model mode (overrides saved config)')
+  .option('--reasoning-model', 'Enable reasoning mode; MiniMax-M3 uses adaptive thinking')
+  .option('--no-reasoning-model', 'Disable reasoning mode; MiniMax-M3 disables thinking')
   .option('--concurrency <n>', 'Parallel LLM calls (default: 3)', '3')
   .option('--timeout <seconds>', 'LLM request timeout in seconds (default: disabled)')
   .option('--retries <n>', 'Max LLM retry attempts per request (default: 3)')
+  .option(
+    '--allow-insecure-connection <host>',
+    'Allow exact host(s) for http:// LLM base URLs (comma-separated; HTTPS is preferred)',
+  )
   .option('--gist', 'Publish wiki as a public GitHub Gist after generation')
   .option('-v, --verbose', 'Enable verbose output (show LLM commands and responses)')
   .option('--review', 'Stop after grouping to review module structure before generating pages')
@@ -391,6 +411,7 @@ program
   .command('trace <from> <to>')
   .description('Find the shortest directed path between two symbols (call + class-member edges)')
   .option('--from-uid <uid>', 'Source symbol UID (zero-ambiguity)')
+  .option('-f, --file <path>', 'Source file path hint (alias for --from-file)')
   .option('--from-file <path>', 'Source file path hint')
   .option('--to-uid <uid>', 'Target symbol UID (zero-ambiguity)')
   .option('--to-file <path>', 'Target file path hint')
@@ -436,7 +457,7 @@ program
   .option('-p, --port <port>', 'Port number', '4848')
   .option(
     '--host <host>',
-    'Bind address (default: 127.0.0.1, use 0.0.0.0 to expose to all interfaces)',
+    'Bind address or resolvable hostname (default: 127.0.0.1; non-loopback requires GITNEXUS_AUTH_TOKEN; hostnames resolve to IPv4)',
   )
   .option('--idle-timeout <seconds>', 'Auto-shutdown after N seconds idle (0 = disabled)', '0')
   .action(createLbugLazyAction(() => import('./eval-server.js'), 'evalServerCommand'));

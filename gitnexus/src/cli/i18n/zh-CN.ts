@@ -30,6 +30,8 @@ export const zhCN = {
   'status.indexed': '索引时间',
   'status.indexedCommit': '索引提交',
   'status.currentCommit': '当前提交',
+  'status.indexRunnerIdentity': '索引记录的分析器运行身份',
+  'status.currentRunnerIdentity': '当前分析器运行身份',
   'status.branch': '分支',
   'status.detached': '（分离 HEAD）',
   'status.workspaceIndexLabel':
@@ -62,11 +64,17 @@ export const zhCN = {
   'tool.usage.impact':
     '用法：gitnexus impact <符号名> [--uid <uid>] [--file <路径>] [--kind <类型>] [--direction upstream|downstream]',
   'tool.usage.trace':
-    '用法：gitnexus trace <起点> <终点> [--from-uid <uid>] [--to-uid <uid>] [--depth <n>]',
+    '用法：gitnexus trace <起点> <终点> [-f|--file <路径>] [--from-file <路径>] [--to-file <路径>] [--from-uid <uid>] [--to-uid <uid>] [--depth <n>]',
   'tool.usage.cypher': '用法：gitnexus cypher <Cypher 查询>',
   'tool.warn.unknownKind':
     "--kind '{{kind}}' 不是已知的符号类型（如 Function、Class、Method），不会用于缩小结果范围。",
   'tool.detectChanges.noChanges': '未检测到变更。',
+  'tool.detectChanges.partial':
+    '结果不完整：图查询失败，可能遗漏已变更符号。请勿将其视为通过的提交前检查。',
+  'tool.detectChanges.truncated':
+    '列表已截断：已变更符号列表被截断，未列出全部变更符号。计数与风险等级仍涵盖全部符号。',
+  'tool.detectChanges.truncatedDegraded':
+    '列表已截断：已变更符号列表被截断。本次运行同时不完整，因此计数为下限而非总数。',
   'tool.detectChanges.changesSummary': '变更：{{files}} 个文件，{{symbols}} 个符号',
   'tool.detectChanges.affectedProcesses': '受影响流程：{{count}}',
   'tool.detectChanges.riskLevel': '风险等级：{{risk}}',
@@ -173,8 +181,10 @@ export const zhCN = {
     '根据检测到的社区生成仓库专属 skill 文件（同时设置 --index-only 时无效）。',
   'help.option.analyze.skipAgentsMd': '跳过更新 AGENTS.md 和 CLAUDE.md 中的 gitnexus 区块',
   'help.option.analyze.noStats': '从 AGENTS.md 和 CLAUDE.md 中省略易变的文件/符号计数',
+  'help.option.analyze.selfCommit':
+    '在 analyze 后自动提交 AGENTS.md/CLAUDE.md 的变更（默认关闭，需显式开启）。仅限这两个文件（绝不使用 `git add -A`）；若两者均不存在、均未变更，或仓库未配置 git 身份，则不执行任何操作。',
   'help.option.analyze.skipSkills':
-    '跳过安装 .claude/skills/gitnexus/ 下的标准 GitNexus skill 文件。不抑制 --skills 生成的社区 skill（位于 .claude/skills/generated/）。使用 --index-only 可跳过所有 AI 上下文文件注入。',
+    '跳过直接安装在 .claude/skills/ 和 .agents/skills/ 下的标准 GitNexus skill 文件。不抑制 --skills 生成的社区 skill（位于 .claude/skills/gitnexus-area-*）。使用 --index-only 可跳过所有 AI 上下文文件注入。',
   'help.option.analyze.indexOnly': '纯索引模式：跳过所有文件注入（AGENTS.md、CLAUDE.md、skills）',
   'help.option.skipGit': '将提供的路径/cwd 视为索引根目录，并跳过向上查找 git 根目录',
   'help.option.analyze.name':
@@ -210,18 +220,19 @@ export const zhCN = {
     '清理已暂存的 LadybugDB 恢复 sidecar（missing-shadow WAL 隔离文件与 dirty-recovery 暂存文件）',
   'help.option.wiki.force': '即使已是最新也强制完整重新生成',
   'help.option.wiki.provider':
-    'LLM 提供商：openai、openrouter、azure、custom、cursor、claude、codex 或 opencode（默认：openai）',
-  'help.option.wiki.model': 'LLM 模型或 Azure deployment 名称（默认：minimax/minimax-m2.5）',
+    'LLM 提供商：minimax、openai、openrouter、azure、custom、cursor、claude、codex 或 opencode（默认：minimax）',
+  'help.option.wiki.model': 'LLM 模型或 deployment 名称（默认：MiniMax-M3）',
   'help.option.wiki.baseUrl':
     'LLM API base URL。Azure v1：https://{resource}.openai.azure.com/openai/v1',
   'help.option.wiki.apiKey': 'LLM API key 或 Azure api-key（保存到 ~/.gitnexus/config.json）',
   'help.option.wiki.apiVersion': 'Azure api-version 查询参数，例如 2024-10-21（仅旧版 Azure API）',
-  'help.option.wiki.reasoningModel':
-    '标记 deployment 为 reasoning model（o1/o3/o4-mini）— 去除 temperature，使用 max_completion_tokens',
-  'help.option.wiki.noReasoningModel': '禁用 reasoning model 模式（覆盖已保存配置）',
+  'help.option.wiki.reasoningModel': '启用 reasoning 模式；MiniMax-M3 使用自适应 thinking',
+  'help.option.wiki.noReasoningModel': '禁用 reasoning 模式；MiniMax-M3 关闭 thinking',
   'help.option.wiki.concurrency': '并行 LLM 调用数（默认：3）',
   'help.option.wiki.timeout': 'LLM 请求超时时间（秒，默认：禁用）',
   'help.option.wiki.retries': '每个请求的最大 LLM 重试次数（默认：3）',
+  'help.option.wiki.allowInsecureConnection':
+    '允许 http:// LLM base URL 使用的精确主机（逗号分隔；推荐使用 HTTPS）',
   'help.option.wiki.gist': '生成后发布 Wiki 为公开 GitHub Gist',
   'help.option.wiki.review': '分组后停止，以便在生成页面前审查模块结构',
   'help.option.wiki.lang': '生成文档的输出语言（如 english、chinese、spanish、japanese）',
@@ -255,7 +266,8 @@ export const zhCN = {
   'help.option.detectChanges.limit': '最多返回的已变更符号数',
   'help.option.cypher.limit': '最多返回的结果行数',
   'help.option.check.cycles': '检测循环导入，并在发现循环时失败',
-  'help.option.evalServer.host': '绑定地址（默认：127.0.0.1；用 0.0.0.0 暴露到所有网卡）',
+  'help.option.evalServer.host':
+    '绑定地址或可解析的主机名（默认：127.0.0.1；非回环绑定需要 GITNEXUS_AUTH_TOKEN；主机名解析为 IPv4）',
   'help.option.evalServer.idleTimeout': '空闲 N 秒后自动关闭（0 = 禁用）',
   'help.option.embeddings.install.cuda':
     '同时下载 CUDA GPU 二进制文件（运行 onnxruntime-node 的 NuGet postinstall；代理后请设置 GLOBAL_AGENT_HTTPS_PROXY）',
@@ -265,6 +277,7 @@ export const zhCN = {
   'help.option.group.sync.exactOnly': '仅精确匹配',
   'help.option.group.sync.allowStale': '跳过过期索引警告',
   'help.option.group.sync.verbose': '显示每条跨仓库链接详情',
+  'help.option.status.json': '输出机器可读的索引和分析器来源信息',
   'help.option.json': 'JSON 输出',
   'help.option.group.impact.target': '要分析的符号或文件名',
   'help.option.group.impact.repo': 'group.yaml 中的成员路径（如 app/backend），不是已索引仓库名称',
@@ -278,6 +291,8 @@ export const zhCN = {
   'help.option.group.contracts.type': '按契约类型过滤',
   'help.option.group.contracts.repo': '按仓库过滤',
   'help.option.group.contracts.unmatched': '仅显示未匹配契约',
+  'help.identityCache.environment':
+    '\n分析器身份缓存：\n  GITNEXUS_ANALYZER_IDENTITY_CACHE_DIR=/absolute/protected/dir\n    由操作员明确信任的持久缓存，用于跨进程快速查询状态。目录必须预先存在、位于 GitNexus 包/构建根目录之外，且路径中不得包含符号链接或 junction。缺少 POSIX 所有权 API 的平台默认保持故障关闭。',
   'help.analyze.environment':
-    '\n环境变量：\n  GITNEXUS_NO_GITIGNORE=1   跳过 .gitignore 解析（仍读取 .gitnexusignore）\n  GITNEXUS_MAX_FILE_SIZE=N  覆盖大文件跳过阈值（KB）。默认 512，最大 32768。\n  GITNEXUS_WORKER_SUB_BATCH_TIMEOUT_MS=N  Worker 空闲超时（毫秒）。默认 30000。\n  GITNEXUS_WAL_CHECKPOINT_THRESHOLD=N  LadybugDB WAL 自动 checkpoint 阈值（字节，默认 67108864 = 64 MiB；-1 保持 Ladybug 默认约 16 MiB）。\n  GITNEXUS_WORKER_SUB_BATCH_MAX_BYTES=N  Worker 作业字节预算。默认 8388608。\n  GITNEXUS_WORKER_POOL_SIZE=N  解析 worker 数量覆盖值。默认 cores-1，最多 16。\n  GITNEXUS_PARSE_CHUNK_CONCURRENCY=N  并发进行中的解析分块数。默认 2。\n  GITNEXUS_WORKER_MAX_RESPAWNS_PER_SLOT=N  每个 slot 丢弃前允许的最大替换进程数。默认 3。\n  GITNEXUS_WORKER_MAX_CUMULATIVE_TIMEOUT_MS=N  每个作业的总重试墙钟时间。默认 5 倍子批次超时。\n  GITNEXUS_WORKER_CONSECUTIVE_FAILURE_THRESHOLD=N  每个 slot 触发熔断的死亡次数。默认 max(3, poolSize)。\n  GITNEXUS_WORKER_SHUTDOWN_DRAIN_MS=N  线程池关闭时等待仍在原生代码中的已退役 worker 的最长时间（到达安全点后再终止，避免进程级 abort）。默认 30000。\n  GITNEXUS_CPP_CAPTURE_BUDGET_MS=N  C++ 捕获提取的每文件墙钟预算；超出后该文件保留部分捕获并输出警告。默认 20000。\n  GITNEXUS_EMBEDDING_THREADS=N  限制 --embeddings 的本地 ONNX CPU 线程数。\n  GITNEXUS_SEMANTIC_EXACT_SCAN_LIMIT=N  exact-scan 回退的最大嵌入分块数。默认 10000。\n  GITNEXUS_VECTOR_MAX_DISTANCE=N  语义/向量搜索接受的最大余弦距离（0 < N <= 2；超出则钳制为 2）。MCP 默认 0.6，其他路径默认 0.5。\n\n当参数和对应环境变量同时提供时，参数优先。\n\n提示：`.gitnexusignore` 支持 `.gitignore` 风格的取反。比如添加\n     `!__tests__/` 可以索引默认自动过滤的目录（#771）。',
+    '\n环境变量：\n  GITNEXUS_NO_GITIGNORE=1   跳过 .gitignore 解析（仍读取 .gitnexusignore）\n  GITNEXUS_MAX_FILE_SIZE=N  覆盖大文件跳过阈值（KB）。默认 512，最大 32768。\n  GITNEXUS_ANALYZER_IDENTITY_CACHE_DIR=/absolute/protected/dir  由操作员明确信任的持久分析器身份缓存；目录必须预先存在、位于包/构建根目录之外，且路径中不得包含符号链接或 junction。\n  GITNEXUS_WORKER_SUB_BATCH_TIMEOUT_MS=N  Worker 空闲超时（毫秒）。默认 30000。\n  GITNEXUS_WAL_CHECKPOINT_THRESHOLD=N  LadybugDB WAL 自动 checkpoint 阈值（字节，默认 67108864 = 64 MiB；-1 保持 Ladybug 默认约 16 MiB）。\n  GITNEXUS_WORKER_SUB_BATCH_MAX_BYTES=N  Worker 作业字节预算。默认 8388608。\n  GITNEXUS_WORKER_POOL_SIZE=N  解析 worker 数量覆盖值。默认 cores-1，最多 16。\n  GITNEXUS_PARSE_CHUNK_CONCURRENCY=N  并发进行中的解析分块数。默认 2。\n  GITNEXUS_WORKER_MAX_RESPAWNS_PER_SLOT=N  每个 slot 丢弃前允许的最大替换进程数。默认 3。\n  GITNEXUS_WORKER_MAX_CUMULATIVE_TIMEOUT_MS=N  每个作业的总重试墙钟时间。默认 5 倍子批次超时。\n  GITNEXUS_WORKER_CONSECUTIVE_FAILURE_THRESHOLD=N  每个 slot 触发熔断的死亡次数。默认 max(3, poolSize)。\n  GITNEXUS_WORKER_SHUTDOWN_DRAIN_MS=N  线程池关闭时等待仍在原生代码中的已退役 worker 的最长时间（到达安全点后再终止，避免进程级 abort）。默认 30000。\n  GITNEXUS_CPP_CAPTURE_BUDGET_MS=N  C++ 捕获提取的每文件墙钟预算；超出后该文件保留部分捕获并输出警告。默认 20000。\n  GITNEXUS_EMBEDDING_THREADS=N  限制 --embeddings 的本地 ONNX CPU 线程数。\n  GITNEXUS_SEMANTIC_EXACT_SCAN_LIMIT=N  exact-scan 回退的最大嵌入分块数。默认 10000。\n  GITNEXUS_VECTOR_MAX_DISTANCE=N  语义/向量搜索接受的最大余弦距离（0 < N <= 2；超出则钳制为 2）。MCP 默认 0.6，其他路径默认 0.5。\n\n当参数和对应环境变量同时提供时，参数优先。\n\n提示：`.gitnexusignore` 支持 `.gitignore` 风格的取反。比如添加\n     `!__tests__/` 可以索引默认自动过滤的目录（#771）。',
 } satisfies EnglishMessages;
